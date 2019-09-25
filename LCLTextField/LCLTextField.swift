@@ -10,23 +10,11 @@ import UIKit
 
 class LCLTextField: UITextField, UITextFieldDelegate {
     
-    // MARK: - init
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        self.maxLength = Int.max
-        
-        self.delegator = LCLTextFieldDelegator()
-        self.delegator?.textField = self
-        self.delegate = self.delegator
-        self.isUserInteractionEnabled = true
-    }
-    
-    required init?(coder aDecoder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
     // MARK: - 自定义属性
     private var delegator: LCLTextFieldDelegator?
+    
+    // 数组
+    var delegates: [UITextFieldDelegate] = []
     
     /// 最大文字长度, 默认不限制长度
     var maxLength: Int?
@@ -34,8 +22,11 @@ class LCLTextField: UITextField, UITextFieldDelegate {
     /// 文本的的内边距, 也就是距离上左下右的边距
     var textInsets: UIEdgeInsets?
     
-    /// 隐藏键盘, 当处理编辑状态时
+    /// 当处于编辑状态时, 是否隐藏键盘, 默认false
     var isHiddenKeyboardIfEditing = true
+    
+    /// 当点击returnKey时, 是否隐藏键盘, 默认为false
+    var isHiddenKeyboardWhenReturn = true
     
     /**
      * 占位符颜色
@@ -59,6 +50,22 @@ class LCLTextField: UITextField, UITextFieldDelegate {
                 self.attributedPlaceholder = NSAttributedString.init(string: self.placeholder!, attributes: [NSAttributedString.Key.foregroundColor : self.placeholderColor!])
             }
         }
+    }
+    
+    // MARK: - init
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        self.maxLength = Int.max
+        
+        self.delegate = self
+        self.delegator = LCLTextFieldDelegator()
+        self.delegator?.textField = self
+        self.delegates.append(self.delegator!)
+        self.isUserInteractionEnabled = true
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
     }
     
     // MARK: 圆角
@@ -163,10 +170,13 @@ class LCLTextField: UITextField, UITextFieldDelegate {
      */
     override func textRect(forBounds bounds: CGRect) -> CGRect {
         var rect = bounds
-        rect.origin.x += self.textInsets!.left
-        rect.origin.y += self.textInsets!.top
-        rect.size.width -= (self.textInsets!.left + self.textInsets!.right)
-        rect.size.height -= (self.textInsets!.top + self.textInsets!.bottom)
+        if self.textInsets != nil {
+        
+            rect.origin.x += self.textInsets!.left
+            rect.origin.y += self.textInsets!.top
+            rect.size.width -= (self.textInsets!.left + self.textInsets!.right)
+            rect.size.height -= (self.textInsets!.top + self.textInsets!.bottom)
+        }
         return super.textRect(forBounds: rect)
     }
     
@@ -177,11 +187,22 @@ class LCLTextField: UITextField, UITextFieldDelegate {
      */
     override func editingRect(forBounds bounds: CGRect) -> CGRect {
         var rect = bounds
-        rect.origin.x += self.textInsets!.left
-        rect.origin.y += self.textInsets!.top
-        rect.size.width -= (self.textInsets!.left + self.textInsets!.right)
-        rect.size.height -= (self.textInsets!.top + self.textInsets!.bottom)
+        if self.textInsets != nil {      
+            rect.origin.x += self.textInsets!.left
+            rect.origin.y += self.textInsets!.top
+            rect.size.width -= (self.textInsets!.left + self.textInsets!.right)
+            rect.size.height -= (self.textInsets!.top + self.textInsets!.bottom)
+        }
         return super.textRect(forBounds: rect)
+    }
+    
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        if self.delegates.count > 0 {
+            for d in self.delegates {
+                let _ = d.textFieldShouldReturn?(textField)
+            }
+        }
+        return true
     }
 }
 
@@ -218,5 +239,11 @@ class LCLTextFieldDelegator: NSObject, LCLTextFieldDelegate {
         if self.textField!.maxLength != nil {
             sender.text = String((sender.text?.prefix(self.textField!.maxLength!))!)
         }
+    }
+    
+    // MARK: - UITextFieldDelegate
+    /// 是否隐藏键盘
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        return true
     }
 }

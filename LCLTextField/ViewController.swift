@@ -8,7 +8,7 @@
 
 import UIKit
 
-class ViewController: UIViewController {
+class ViewController: UIViewController, UITextFieldDelegate {
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -19,6 +19,7 @@ class ViewController: UIViewController {
         addTextFieldFirst()
         addTextFieldSecond()
         addTextFieldThird()
+        addTextFieldFour()
     }
     
     func addTextFieldFirst() {
@@ -119,5 +120,44 @@ class ViewController: UIViewController {
         
         // 圆角
         textField.AddCorner(isTopLeft: true, isTopRight: false, isBottomLeft: false, isBottomRight: true, radius: 20)
+    }
+    
+    func addTextFieldFour() {
+        let width = UIScreen.main.bounds.width
+        
+        let textField = LCLTextField()
+        textField.frame = CGRect(x: 40, y: 280, width: width - 80, height: 40);
+        textField.backgroundColor = .black
+        textField.textAlignment = .center
+        self.view.addSubview(textField)
+        
+        // 光标颜色
+        textField.tintColor = .white
+        
+        // 文本颜色
+        textField.textColor = .white
+        
+        // 提示语颜色
+        textField.placeholderColor = .lightGray
+        textField.placeholder = "请输入"
+        
+        // 最大文字长度
+        textField.maxLength = 10
+        
+        // 点击textField, 如果处理编辑状态, 隐藏键盘
+        textField.isHiddenKeyboardIfEditing = true
+        
+        // 设置代理
+//        textField.delegate = self // 不要使用这种方式设置代理
+        textField.delegates.append(self)
+        
+        // 点击Return键, 隐藏键盘
+        textField.isHiddenKeyboardWhenReturn = true
+    }
+    
+    // MARK: - UITextFieldDelegate
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        textField.endEditing(true)
+        return true
     }
 }
